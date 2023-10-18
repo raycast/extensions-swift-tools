@@ -5,9 +5,10 @@ _Import a Swift package directly into a [Raycast](https://raycast.com) extension
 ### Why?
 
 This new feature brings a host of benefits, including:
-  1.  The ability to leverage native macOS APIs: This opens up a whole slew of opportunities for creating extensions that are deeply integrated into macOS.
-  2.  Avoidance of language barrier: Since developers can use Swift, there's no need to learn how to manipulate native macOS APIs using another language.
-  3.  Ease of use: Thanks to this helper library, you won’t have to worry about the complexities of the underlying system. All you need to focus on is the Swift code.
+
+1.  The ability to leverage native macOS APIs: This opens up a whole slew of opportunities for creating extensions that are deeply integrated into macOS.
+2.  Avoidance of language barrier: Since developers can use Swift, there's no need to learn how to manipulate native macOS APIs using another language.
+3.  Ease of use: Thanks to this helper library, you won’t have to worry about the complexities of the underlying system. All you need to focus on is the Swift code.
 
 ### Requirements
 
@@ -35,7 +36,7 @@ let package = Package(
     name: "MyExecutable",
 +    platforms: [.macOS(.v12)],
 +    dependencies: [
-+      .package(url: "https://github.com/raycast/raycast-extension-macro", branch: "main")
++      .package(url: "https://github.com/raycast/raycast-extension-macro", from: "1.0.0")
 +    ],
     targets: [
         .executableTarget(
@@ -133,8 +134,8 @@ type Color = {
 
 export default async function command() {
   const color = await pickColor<Color | undefined>();
-  
-  console.log(color)
+
+  console.log(color);
 }
 ```
 
