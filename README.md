@@ -12,7 +12,7 @@ This new feature brings a host of benefits, including:
 
 ### Requirements
 
-- XCode 15+
+- Xcode 15+
 
 ### Getting Started
 
