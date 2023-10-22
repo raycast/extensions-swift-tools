@@ -36,7 +36,7 @@ let package = Package(
     name: "MyExecutable",
 +    platforms: [.macOS(.v12)],
 +    dependencies: [
-+      .package(url: "https://github.com/raycast/raycast-extension-macro", from: "1.0.0")
++      .package(url: "https://github.com/raycast/raycast-extension-macro", from: "0.1.0")
 +    ],
     targets: [
         .executableTarget(
