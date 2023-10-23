@@ -18,7 +18,7 @@ This new feature brings a host of benefits, including:
 
 We are going to assume that you have created (or forked) a Raycast extension. If you haven't, see [this guide](https://developers.raycast.com/basics/create-your-first-extension).
 
-Let's start by creating a new `Executable` Swift `Package` in the folder of your Raycast extension. To do so, open up XCode and select `File > New > Package…`. You can create it wherever you want inside it but I like to put it in a `swift` folder next to the existing `src` folder.
+Let's start by creating a new `Executable` Swift `Package` in the folder of your Raycast extension. To do so, open up Xcode and select `File > New > Package…`. You can create it wherever you want inside it but I like to put it in a `swift` folder next to the existing `src` folder.
 
 > Do not forget to **untick** the "Create Git repository on my Mac" during the creation process.
 
