@@ -16,6 +16,10 @@ let package = Package(
       name: "RaycastSwiftPlugin",
       targets: ["RaycastSwiftPlugin"]
     ),
+    .plugin(
+      name: "RaycastTypeScriptPlugin",
+      targets: ["RaycastTypeScriptPlugin"]
+    )
   ],
   dependencies: [
     .package(url: "https://github.com/apple/swift-syntax.git", from: "509.1.0"),
@@ -39,27 +43,12 @@ let package = Package(
         .product(name: "SwiftSyntax", package: "swift-syntax"),
         .product(name: "SwiftSyntaxBuilder", package: "swift-syntax"),
         .product(name: "SwiftSyntaxMacros", package: "swift-syntax"),
-        .product(name: "SwiftCompilerPlugin", package: "swift-syntax")
+        .product(name: "SwiftCompilerPlugin", package: "swift-syntax"),
       ],
       path: "SwiftMacros/Implementation",
       packageAccess: true,
       swiftSettings: .swiftSettings
     ),
-
-//    .testTarget(
-//      name: "RaycastSwiftMacrosTests",
-//      dependencies: [
-//        .target(name: "MacrosImplementation"),
-//        .product(name: "SwiftSyntaxMacrosTestSupport", package: "swift-syntax"),
-//        .product(name: "SwiftSyntax", package: "swift-syntax"),
-//        .product(name: "SwiftSyntaxBuilder", package: "swift-syntax"),
-//        .product(name: "SwiftSyntaxMacros", package: "swift-syntax"),
-//        .product(name: "SwiftCompilerPlugin", package: "swift-syntax")
-//      ],
-//      path: "SwiftMacros/Tests",
-//      packageAccess: true,
-//      swiftSettings: .swiftSettings
-//    )
 
     // Swift plugin
 
@@ -75,6 +64,30 @@ let package = Package(
     .executableTarget(
       name: "SwiftCodeGenerator",
       path: "SwiftPlugin/Implementation",
+      swiftSettings: .swiftSettings
+    ),
+
+    // TypeScript plugin
+
+    .plugin(
+      name: "RaycastTypeScriptPlugin",
+      capability: .command(
+        intent: .custom(verb: "regenerate-typescript-files", description: "Generates the TS files requires to interface with the Swift code."),
+        permissions: []
+      ),
+      dependencies: [
+        .target(name: "TypeScriptCodeGenerator")
+      ],
+      path: "TypeScriptPlugin/Interface"
+    ),
+
+    .executableTarget(
+      name: "TypeScriptCodeGenerator",
+      dependencies: [
+        .product(name: "SwiftSyntax", package: "swift-syntax"),
+        .product(name: "SwiftParser", package: "swift-syntax"),
+      ],
+      path: "TypeScriptPlugin/Implementation",
       swiftSettings: .swiftSettings
     )
   ],
