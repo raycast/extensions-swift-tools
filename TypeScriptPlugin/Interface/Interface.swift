@@ -3,6 +3,13 @@
 import PackagePlugin
 import Foundation
 
+/// Command generating the `d.ts` interface and TypeScript implementation file for a Swift target intended to be used in Raycast extensions.
+///
+/// This command is customizable by using the following _long_ options:
+/// - `--target name` specifies the target being subjected for code generation. If not provided, this command will be applied to all Swift executable targets within the receiving SPM package.
+/// - `--attribute name` specifies the Swift attributes indicating that a Swift global function can be used from a Raycast extension. If not provided, this command will infer all `@raycast` Swift attributes as exportable.
+///
+/// All Command-Line options support multiple input (i.e. `--target name1 --target name2`).
 @main struct TypeScriptCodeInterface: CommandPlugin {
   func performCommand(context: PluginContext, arguments: [String]) async throws {
     var arguments = ArgumentExtractor(arguments)
@@ -27,7 +34,9 @@ import Foundation
       }
 
       do {
+        // 3. Run the TypeScript interface and implementation code generator for all files containing attributes.
         let generatorArguments = ["-t", target.name, "-a"] + attributes + ["-f"] + paths.map(\.string)
+        // 4. A single `String` is produced by the Child process containing the target's TS interface and implementation.
         print(try await Process.run(generator.path.url, arguments: generatorArguments).stdout)
       } catch let error {
         Diagnostics.error("Failed to generate TS interface and implementation for target '\(target.name)'")

@@ -3,7 +3,8 @@
 import Foundation
 
 extension Sequence where Element == URL {
-  func contains(attributes: [String]) async throws -> [URL] {
+  /// Lazily filter out files not containing any of the given `attributes`.
+  func filter(attributes: [String]) async throws -> [URL] {
     precondition(!attributes.isEmpty)
     var result: [URL] = []
 

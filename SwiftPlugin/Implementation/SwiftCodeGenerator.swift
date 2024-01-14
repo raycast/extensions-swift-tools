@@ -2,11 +2,20 @@
 
 import Foundation
 
+/// Command-Line tool generating the `@main` Swift file for a Swift executable target intended to be used from a Raycast extension.
+///
+/// This command is customizable by using the following _short_ options.
+/// - `-o /path/to/mainfile.swift` (required) specifies the full path to the file that will be generated.
+/// - `-m name` (required) specifies the name of the module where this `@main` Swift fille will be added.
+/// - `-t name` (required) specifies the name for the structure marked as `@main`.
 @main struct SwiftCodeGenerator {
   static func main() throws {
+    // 1. Extract all flags/options passed to this Command-Line tool.
     let (fileURL, moduleName, typeName) = try CommandLine.structuredArguments(flags: "-o", "-m", "-t")
-    let file = mainFile(module: consume moduleName, entry: consume typeName)
-    try file.write(to: consume fileURL, atomically: true, encoding: .utf8)
+    // 2. Generate the @main Swift file.
+    let fileContent = mainFile(module: consume moduleName, entry: consume typeName)
+    // 3. Write the Swift file to the designated path.
+    try fileContent.write(to: consume fileURL, atomically: true, encoding: .utf8)
   }
 }
 
