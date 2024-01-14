@@ -12,17 +12,21 @@ import Foundation
 /// All Command-Line options support multiple input (i.e. `--target name1 --target name2`).
 @main struct TypeScriptCodeInterface: CommandPlugin {
   func performCommand(context: PluginContext, arguments: [String]) async throws {
+    /// Helper to extract flags and options from the passed Command-Line arguments.
     var arguments = ArgumentExtractor(arguments)
     /// The tool used to generate the TS definition and implementation.
     let generator = try context.tool(named: "TypeScriptCodeGenerator")
-    /// The targets that will get code generation.
-    let targets = try swiftTargets(context: context, arguments: &arguments)
-    /// The attribute name marking the functions to be exported.
-    let attributes = try attributeName(arguments: &arguments, default: "@raycast")
+    /// The SPM targets subject to code generation.
+    let targets = try Self.swiftTargets(context: context, arguments: &arguments, identifier: "target")
+    /// The exact attribute names marking the functions to be exported (including the `@` or `#`).
+    let attributes = try Self.attributeName(arguments: &arguments, identifier: "attribute", default: "@raycast")
 
+    // Enumerate all Swift targets subject to code generation.
     for target in targets {
       var paths: Set<Path> = []
+      // 1. Enumerate all Swift files in the target.
       for file in target.sourceFiles(withSuffix: "swift") {
+        // 2. Select those files containing any of the specified exportable attributes.
         guard case .source = file.type, !paths.contains(file.path),
               try await file.contains(attributes: attributes) else { continue }
         paths.insert(file.path)
@@ -47,8 +51,10 @@ import Foundation
 }
 
 private extension TypeScriptCodeInterface {
-  func swiftTargets(context: PluginContext, arguments: inout ArgumentExtractor) throws -> [SwiftSourceModuleTarget] {
-    let targetedNames = arguments.extractOption(named: "target")
+  /// Returns the SPM targets subject to code generation.
+  /// - parameter identifier: The Command-Line option name used to provide explict SPM targets. If no option with such name is found, all Swift executable targets will be subject to code generation.
+  static func swiftTargets(context: PluginContext, arguments: inout ArgumentExtractor, identifier optionName: String) throws -> [SwiftSourceModuleTarget] {
+    let targetedNames = arguments.extractOption(named: optionName)
     guard !targetedNames.isEmpty else {
       let targets = context.package.targets(ofType: SwiftSourceModuleTarget.self).filter { $0.kind == .executable }
       if targets.isEmpty { Diagnostics.warning("No executable Swift targets found") }
@@ -82,22 +88,28 @@ private extension TypeScriptCodeInterface {
     return targets
   }
 
-  func attributeName(arguments: inout ArgumentExtractor, default: String) throws -> [String] {
-    let names = arguments.extractOption(named: "attribute")
+  /// Returns the Swift attribute names used to mark Swift functions as _exportable_ (i.e. usable by a Raycast extensions).
+  static func attributeName(arguments: inout ArgumentExtractor, identifier optionName: String, default: String...) throws -> [String] {
+    let explicitNames = arguments.extractOption(named: optionName)
       .compactMap { $0.drop { $0.isWhitespace } }
       .filter { !$0.isEmpty }
 
-    guard names.isEmpty else { return names.map { String($0) } }
+    guard explicitNames.isEmpty else { return explicitNames.map { String($0) } }
 
-    let defaultName = `default`.drop { $0.isWhitespace }
-    guard defaultName.isEmpty else { return [String(defaultName)] }
+    let defaultNames = try `default`.map {
+      let name = $0.drop { $0.isWhitespace }
+      guard name.isEmpty else { return String(name) }
+      Diagnostics.error("No attribute marking exported function was provided")
+      throw Error.missingAttributes
+    }
 
-    Diagnostics.error("No attribute marking exported function was provided")
+    guard defaultNames.isEmpty else { return defaultNames }
+    Diagnostics.error("No explicit attributes nor default attribute names were provided")
     throw Error.missingAttributes
   }
-}
 
-private enum Error: Swift.Error {
-  case unsupportedTarget
-  case missingAttributes
+  enum Error: Swift.Error {
+    case unsupportedTarget
+    case missingAttributes
+  }
 }

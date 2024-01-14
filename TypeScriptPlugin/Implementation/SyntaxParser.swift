@@ -54,33 +54,10 @@ private final class GlobalAttributedFunctionVisitor: SyntaxVisitor {
         case .wildcard: param.secondName?.text ?? ""
         default: ""
         }
-
-        let paramType: String
-        if let type = param.type.as(IdentifierTypeSyntax.self) {
-          paramType = type.name.text
-        } else if let type = param.type.as(SomeOrAnyTypeSyntax.self),
-                  let constraint = type.constraint.as(IdentifierTypeSyntax.self) {
-          paramType = constraint.name.text
-        } else if case .some = param.type.as(MetatypeTypeSyntax.self) {
-          paramType = "Any"
-        } else {
-          paramType = "Any"
-        }
-
-        match.parameters.append((paramName, paramType))
+        match.parameters.append((paramName, param.type))
       }
 
-      if let returnClause = signature.returnClause {
-        if let type = returnClause.type.as(IdentifierTypeSyntax.self) {
-          match.returnType = type.name.text
-        } else if let type = returnClause.type.as(SomeOrAnyTypeSyntax.self),
-                  let constraint = type.constraint.as(IdentifierTypeSyntax.self) {
-          match.returnType = constraint.name.text
-        } else {
-          match.returnType = "Any"
-        }
-      }
-
+      match.returnType = signature.returnClause?.type
       self.markedFunctions.append(match)
     }
     return .skipChildren

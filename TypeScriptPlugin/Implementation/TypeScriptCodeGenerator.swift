@@ -17,18 +17,21 @@ import Foundation
     // 3. Parse the Swift files and extract the signature of the exportable global functions.
     let functions = try await (consume exportableFiles).functions(attributes: consume attributes)
     // 5. Passed in stdout the generated interface and implementation TS content.
-
-    print("""
-    // @raycast Interface Generation (\(target))
-
-    declare module "swift:*/SwiftPackage" {
-    \(functions.map { "\texport \($0.declaration)" }.joined(separator: "\n"))
-    }
-
-    // @raycast Implementation Generation (\(target))
-
-    """)
-
-    #warning("Implementation here")
+    print(tsFile(target: consume target, functions: consume functions, swiftRunner: "runSwiftFunction"))
   }
+}
+
+private func tsFile(target: String, functions: [ExportableFunction], swiftRunner functionName: String) -> String {
+  """
+  // @raycast Generated Interface (\(target))
+
+  declare module "swift:*/SwiftPackage" {
+  \(functions.map { "\texport \($0.interface);" }.joined(separator: "\n"))
+  }
+
+  // @raycast Generated Implementation (\(target))
+
+  \(functions.map { $0.implementation(runner: functionName) }.joined(separator: "\n\n"))
+
+  """
 }
