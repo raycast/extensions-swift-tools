@@ -11,27 +11,21 @@ import Foundation
 @main struct TypeScriptCodeGenerator {
   static func main() async throws {
     // 1. Extract all flags/options passed to this Command-Line tool.
-    let (target, attributes, files) = try CommandLine.structuredArguments(flags: "-t", "-a", "-f")
+    let (headerURL, implementationURL, attributes, files) = try CommandLine.structuredArguments(header: "-h", implementation: "-i", attributes: "-a", files: "-f")
     // 2. Filter out files not containing the exportable attributes.
-    let exportableFiles = try await files.filter(attributes: attributes)
+    let exportableFiles = try await (consume files).filter(attributes: attributes)
     // 3. Parse the Swift files and extract the signature of the exportable global functions.
     let functions = try await (consume exportableFiles).functions(attributes: consume attributes)
-    // 5. Passed in stdout the generated interface and implementation TS content.
-    print(tsFile(target: consume target, functions: consume functions, swiftRunner: "runSwiftFunction"))
+    // 4. Generate the TypeScript definition file.
+    let definition: String = """
+    declare module "swift:*/SwiftPackage" {
+    \(functions.map { "\texport \($0.typescriptInterface);" }.joined(separator: "\n"))
+    }
+    """
+    // 5. Generate the JavaScript implementation file.
+    let implementation: String = functions.map { $0.javascriptImplementation(runner: "runSwiftFunction") }.joined(separator: "\n\n")
+    // 6. Pipe the generated code to their appropriate output files
+    try definition.write(to: consume headerURL, atomically: true, encoding: .utf8)
+    try implementation.write(to: consume implementationURL, atomically: true, encoding: .utf8)
   }
-}
-
-private func tsFile(target: String, functions: [ExportableFunction], swiftRunner functionName: String) -> String {
-  """
-  // @raycast Generated Interface (\(target))
-
-  declare module "swift:*/SwiftPackage" {
-  \(functions.map { "\texport \($0.interface);" }.joined(separator: "\n"))
-  }
-
-  // @raycast Generated Implementation (\(target))
-
-  \(functions.map { $0.implementation(runner: functionName) }.joined(separator: "\n\n"))
-
-  """
 }

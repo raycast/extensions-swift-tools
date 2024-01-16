@@ -13,7 +13,7 @@ struct ExportableFunction: @unchecked Sendable {
 }
 
 extension ExportableFunction {
-  var interface: String {
+  var typescriptInterface: String {
     var result = "async function \(name)("
     result.append(parameters.map { "\($0.name): \(Self.typeScriptType(for: $0.type))" }.joined(separator: ", "))
     result.append("): Promise<")
@@ -22,8 +22,27 @@ extension ExportableFunction {
     return result
   }
 
-  func implementation(runner: String) -> String {
-    var result = interface
+  func typescriptImplementation(runner: String) -> String {
+    var result = typescriptInterface
+    result.append(" {\n")
+    result.append(#"  return await \#(runner)("\#(name)""#)
+    if !parameters.isEmpty {
+      result.append(", ")
+      result.append(parameters.map(\.name).joined(separator: ", "))
+    }
+    result.append(")\n}")
+    return result
+  }
+
+  var javascriptInterface: String {
+    var result = "async function \(name)("
+    result.append(parameters.map(\.name).joined(separator: ", "))
+    result.append(")")
+    return result
+  }
+
+  func javascriptImplementation(runner: String) -> String {
+    var result = javascriptInterface
     result.append(" {\n")
     result.append(#"  return await \#(runner)("\#(name)""#)
     if !parameters.isEmpty {

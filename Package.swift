@@ -71,10 +71,7 @@ let package = Package(
 
     .plugin(
       name: "RaycastTypeScriptPlugin",
-      capability: .command(
-        intent: .custom(verb: "regenerate-typescript-files", description: "Generates the TS files requires to interface with the Swift code."),
-        permissions: []
-      ),
+      capability: .buildTool(),
       dependencies: [
         .target(name: "TypeScriptCodeGenerator")
       ],

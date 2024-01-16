@@ -2,6 +2,32 @@
 
 import Foundation
 
+extension StringProtocol {
+  var fileURL: URL? {
+    let str: String = (self as? String) ?? String(self)
+
+    let url = if #available(macOS 14, *) {
+      URL(string: str, encodingInvalidCharacters: false)
+    } else {
+      URL(string: str)
+    }
+
+    guard let url else { return .none }
+
+    switch url.scheme {
+    case "file": return url
+    case .some: return .none
+    case .none: break
+    }
+
+    return if #available(macOS 13, *) {
+      URL(filePath: str)
+    } else {
+      URL(fileURLWithPath: str)
+    }
+  }
+}
+
 extension Sequence where Element == URL {
   /// Lazily filter out files not containing any of the given `attributes`.
   func filter(attributes: [String]) async throws -> [URL] {

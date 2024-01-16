@@ -4,12 +4,18 @@ import Foundation
 
 extension CommandLine {
   /// Returns the Swift package target name and the file URLs containing the macro.
-  static func structuredArguments(flags targetFlag: String, _ attributesFlag: String, _ filesFlag: String) throws -> (target: String, attributes: [String], files: [URL]) {
+  static func structuredArguments(
+    header headerFlag: String,
+    implementation implementationFlag: String,
+    attributes attributesFlag: String,
+    files filesFlag: String
+  ) throws -> (header: URL, implementation: URL, attributes: [String], files: [URL]) {
     let arguments = try Self.arguments
-    let targetName = try Self.targetName(flag: targetFlag, arguments: arguments)
+    let headerPath = try Self.header(flag: headerFlag, arguments: arguments)
+    let implementationPath = try Self.implementation(flag: implementationFlag, arguments: arguments)
     let attributes = try Self.attributes(flag: attributesFlag, arguments: arguments)
     let fileURLs = try Self.fileURLs(flag: filesFlag, arguments: consume arguments)
-    return (consume targetName, consume attributes, consume fileURLs)
+    return (consume headerPath, consume implementationPath, consume attributes, consume fileURLs)
   }
 }
 
@@ -42,19 +48,19 @@ private extension CommandLine {
 }
 
 private extension CommandLine {
-  static func targetName(flag: String, arguments: borrowing [String]) throws -> String {
-    guard let flagIndex = arguments.firstIndex(of: flag) else { throw MissingTargetError(flag: flag) }
+  static func header(flag: String, arguments: borrowing [String]) throws -> URL {
+    guard let flagIndex = arguments.firstIndex(of: flag) else { throw MissingHeaderError(flag: flag) }
 
-    let nameIndex = flagIndex + 1
-    guard nameIndex < arguments.endIndex else { throw MissingTargetError(flag: flag) }
+    let pathIndex = flagIndex + 1
+    guard pathIndex < arguments.endIndex else { throw MissingHeaderError(flag: flag) }
 
-    let name = arguments[nameIndex].drop { $0.isWhitespace }
-    guard !name.isEmpty else { throw MissingTargetError(flag: flag) }
-
-    return String(consume name)
+    let path = arguments[pathIndex].drop { $0.isWhitespace }
+    guard !path.isEmpty else { throw MissingHeaderError(flag: flag) }
+    guard let url = path.fileURL else { throw MissingHeaderError(flag: flag) }
+    return url
   }
 
-  final class MissingTargetError: LocalizedError {
+  final class MissingHeaderError: LocalizedError {
     let flag: String
     let (file, function, line, column): (String, String, Int, Int)
 
@@ -63,9 +69,65 @@ private extension CommandLine {
       (self.file, self.function, self.line, self.column) = (file, function, line, column)
     }
 
-    var errorDescription: String? { "No target name provided" }
-    var failureReason: String? { "\(TypeScriptCodeGenerator.self) requires the definition of the Swift executable target name" }
-    var recoverySuggestion: String? { "Pass the \(flag) flag to the \(TypeScriptCodeGenerator.self) followed by the name of the target" }
+    var errorDescription: String? { "No header file path provided" }
+    var failureReason: String? { "\(TypeScriptCodeGenerator.self) requires the path where the header code generation" }
+    var recoverySuggestion: String? { "Pass the \(flag) flag to the \(TypeScriptCodeGenerator.self) followed by the output file path" }
+  }
+
+  final class InvalidHeaderError: LocalizedError {
+    let flag: String
+    let (file, function, line, column): (String, String, Int, Int)
+
+    init(flag: String, file: String = #fileID, function: String = #function, line: Int = #line, column: Int = #column) {
+      self.flag = flag
+      (self.file, self.function, self.line, self.column) = (file, function, line, column)
+    }
+
+    var errorDescription: String? { "Invalid code generation header file URL" }
+    var failureReason: String? { "\(TypeScriptCodeGenerator.self) requires the path where the header code generation" }
+    var recoverySuggestion: String? { "Pass the \(flag) flag to the \(TypeScriptCodeGenerator.self) followed by the output file path" }
+  }
+}
+
+private extension CommandLine {
+  static func implementation(flag: String, arguments: borrowing [String]) throws -> URL {
+    guard let flagIndex = arguments.firstIndex(of: flag) else { throw MissingImplementationError(flag: flag) }
+
+    let pathIndex = flagIndex + 1
+    guard pathIndex < arguments.endIndex else { throw MissingImplementationError(flag: flag) }
+
+    let path = arguments[pathIndex].drop { $0.isWhitespace }
+    guard !path.isEmpty else { throw MissingImplementationError(flag: flag) }
+    guard let url = path.fileURL else { throw InvalidImplementationError(flag: flag) }
+    return url
+  }
+
+  final class MissingImplementationError: LocalizedError {
+    let flag: String
+    let (file, function, line, column): (String, String, Int, Int)
+
+    init(flag: String, file: String = #fileID, function: String = #function, line: Int = #line, column: Int = #column) {
+      self.flag = flag
+      (self.file, self.function, self.line, self.column) = (file, function, line, column)
+    }
+
+    var errorDescription: String? { "No implementation file path provided" }
+    var failureReason: String? { "\(TypeScriptCodeGenerator.self) requires the path where the implementation code generation" }
+    var recoverySuggestion: String? { "Pass the \(flag) flag to the \(TypeScriptCodeGenerator.self) followed by the output file path" }
+  }
+
+  final class InvalidImplementationError: LocalizedError {
+    let flag: String
+    let (file, function, line, column): (String, String, Int, Int)
+
+    init(flag: String, file: String = #fileID, function: String = #function, line: Int = #line, column: Int = #column) {
+      self.flag = flag
+      (self.file, self.function, self.line, self.column) = (file, function, line, column)
+    }
+
+    var errorDescription: String? { "Invalid code generation implementation file URL" }
+    var failureReason: String? { "\(TypeScriptCodeGenerator.self) requires the path where the implementation code generation" }
+    var recoverySuggestion: String? { "Pass the \(flag) flag to the \(TypeScriptCodeGenerator.self) followed by the output file path" }
   }
 }
 
@@ -123,13 +185,7 @@ private extension CommandLine {
       .prefix { !$0.hasPrefix("-") }
       .filter { $0.contains { !$0.isWhitespace } && manager.fileExists(atPath: $0) }
       .reduce(into: Set<String>()) { $0.insert($1) }
-      .map {
-        if #available(macOS 13, *) {
-          URL(filePath: $0)
-        } else {
-          URL(fileURLWithPath: $0)
-        }
-      }
+      .compactMap(\.fileURL)
   }
 
   final class MissingFilesError: LocalizedError {
