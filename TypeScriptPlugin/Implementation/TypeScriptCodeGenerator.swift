@@ -23,7 +23,7 @@ import Foundation
     }
     """
     // 5. Generate the JavaScript implementation file.
-    let implementation: String = functions.map { $0.javascriptImplementation(runner: "runSwiftFunction") }.joined(separator: "\n\n")
+    let implementation: String = functions.map { "export \($0.javascriptImplementation(runner: "runSwiftFunction"))" }.joined(separator: "\n\n")
     // 6. Pipe the generated code to their appropriate output files
     try definition.write(to: consume headerURL, atomically: true, encoding: .utf8)
     try implementation.write(to: consume implementationURL, atomically: true, encoding: .utf8)
