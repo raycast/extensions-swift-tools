@@ -3,19 +3,20 @@
 import Foundation
 
 extension CommandLine {
-  /// Returns the Swift package target name and the file URLs containing the macro.
   static func structuredArguments(
+    target targetFlag: String,
     header headerFlag: String,
     implementation implementationFlag: String,
     attributes attributesFlag: String,
     files filesFlag: String
-  ) throws -> (header: URL, implementation: URL, attributes: [String], files: [URL]) {
+  ) throws -> (target: String, header: URL, implementation: URL, attributes: [String], files: [URL]) {
     let arguments = try Self.arguments
+    let targetName = try Self.targetName(flag: targetFlag, arguments: arguments)
     let headerPath = try Self.header(flag: headerFlag, arguments: arguments)
     let implementationPath = try Self.implementation(flag: implementationFlag, arguments: arguments)
     let attributes = try Self.attributes(flag: attributesFlag, arguments: arguments)
     let fileURLs = try Self.fileURLs(flag: filesFlag, arguments: consume arguments)
-    return (consume headerPath, consume implementationPath, consume attributes, consume fileURLs)
+    return (consume targetName, consume headerPath, consume implementationPath, consume attributes, consume fileURLs)
   }
 }
 
@@ -44,6 +45,34 @@ private extension CommandLine {
 
     var errorDescription: String? { "No Command-Line arguments" }
     var failureReason: String? { "\(TypeScriptCodeGenerator.self) unexpectedly received no arguments" }
+  }
+}
+
+private extension CommandLine {
+  static func targetName(flag: String, arguments: borrowing [String]) throws -> String {
+    guard let flagIndex = arguments.firstIndex(of: flag) else { throw MissingTargetError(flag: flag) }
+
+    let nameIndex = flagIndex + 1
+    guard nameIndex < arguments.endIndex else { throw MissingTargetError(flag: flag) }
+
+    let name = arguments[nameIndex].drop { $0.isWhitespace }
+    guard !name.isEmpty else { throw MissingTargetError(flag: flag) }
+
+    return String(consume name)
+  }
+
+  final class MissingTargetError: LocalizedError {
+    let flag: String
+    let (file, function, line, column): (String, String, Int, Int)
+
+    init(flag: String, file: String = #fileID, function: String = #function, line: Int = #line, column: Int = #column) {
+      self.flag = flag
+      (self.file, self.function, self.line, self.column) = (file, function, line, column)
+    }
+
+    var errorDescription: String? { "No target name provided" }
+    var failureReason: String? { "\(TypeScriptCodeGenerator.self) requires the definition of the Swift executable target name" }
+    var recoverySuggestion: String? { "Pass the \(flag) flag to the \(TypeScriptCodeGenerator.self) followed by the name of the target" }
   }
 }
 
