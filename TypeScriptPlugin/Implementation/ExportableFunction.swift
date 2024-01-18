@@ -14,7 +14,7 @@ struct ExportableFunction: @unchecked Sendable {
 
 extension ExportableFunction {
   var typescriptInterface: String {
-    var result = "async function \(name)("
+    var result = "function \(name)("
     result.append(parameters.map { "\($0.name): \(Self.typeScriptType(for: $0.type))" }.joined(separator: ", "))
     result.append("): Promise<")
     result.append(returnType.map { Self.typeScriptType(for: $0) } ?? "void")
