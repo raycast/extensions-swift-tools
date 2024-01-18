@@ -3,7 +3,7 @@ import PackageDescription
 import CompilerPluginSupport
 
 let package = Package(
-  name: "raycast-extension-macro",
+  name: "extensions-swift-tools",
   platforms: [
     .macOS(.v12)
   ],

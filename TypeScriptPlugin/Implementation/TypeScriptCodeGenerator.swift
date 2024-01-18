@@ -18,7 +18,7 @@ import Foundation
     let functions = try await (consume exportableFiles).functions(attributes: consume attributes)
     // 4. Generate the TypeScript definition file.
     let definition: String = """
-    \(functions.map { "\($0.typescriptInterface);" }.joined(separator: "\n"))
+    \(functions.map { "export \($0.typescriptInterface);" }.joined(separator: "\n"))
     """
     // 5. Generate the JavaScript implementation file.
     let implementation: String = functions.map { "export \($0.javascriptImplementation(runner: "runSwiftFunction"))" }.joined(separator: "\n\n")

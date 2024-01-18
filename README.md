@@ -73,9 +73,9 @@ This Swift Package contains code generation macros and plugins to build a commun
           .executableTarget(
             name: "CustomName",
     +       dependencies: [
-    +         .product(name: "RaycastSwiftMacros", package: "raycast-extension-macro"),
-    +         .product(name: "RaycastSwiftPlugin", package: "raycast-extension-macro"),
-    +         .product(name: "RaycastTypeScriptPlugin", package: "raycast-extension-macro"),
+    +         .product(name: "RaycastSwiftMacros", package: "extensions-swift-tools"),
+    +         .product(name: "RaycastSwiftPlugin", package: "extensions-swift-tools"),
+    +         .product(name: "RaycastTypeScriptPlugin", package: "extensions-swift-tools"),
     +       ]
           ),
         ]
