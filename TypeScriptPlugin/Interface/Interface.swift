@@ -43,7 +43,7 @@ import Foundation
       .buildCommand(
         displayName: "Generating d.ts and js files",
         executable: generator,
-        arguments: ["-t", target.name, "-h", headerPath.string, "-i", implementationPath.string, "-a"] + attributes + ["-f"] + paths.map(\.string),
+        arguments: ["-h", headerPath.string, "-i", implementationPath.string, "-a"] + attributes + ["-f"] + paths.map(\.string),
         outputFiles: [headerPath, implementationPath]
       )
     ]
