@@ -1,6 +1,6 @@
 # Swift for Raycast Extensions
 
-This Swift Package contains code generation macros and plugins to build a communication chanel between [Raycast](https://raycast.com)'s React extensions and Swift native code. Basically, it lets you import Swift code into your Raycast extension in order to:
+This Swift Package contains code generation macros and plugins to build a communication channel between [Raycast](https://raycast.com)'s React extensions and Swift native code. Basically, it lets you import Swift code into your Raycast extension in order to:
 - leverage native macOS APIs that might not be exposed to TS/JS, or
 - use Swift for targeted sections of your extension, letting you use all Swift language features (such as result builders, async/await, generics/existentials, etc.), or
 - compartmentalize your extension into client-facing code (react) and system code (swift).
