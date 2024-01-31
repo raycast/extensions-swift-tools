@@ -25,8 +25,7 @@ public struct RaycastMacro: PeerMacro {
     let isAsync = signature.effectSpecifiers?.asyncSpecifier != nil
     let isThrow = signature.effectSpecifiers?.throwsSpecifier != nil
     let parameters = signature.parameterClause.parameters
-    let returnType = signature.returnClause.map { "\($0.type)" }
-    let isReturning = !(returnType.flatMap { $0 == "Void" || $0 == "()" } ?? true)
+    let isReturning = Self.isReturning(clause: signature.returnClause)
 
     let typeDecl = "@objc final class _Proxy\(funcName): NSObject, _Ray.Proxy"
     let funcDecl = "static func _execute(_ callback: _Ray.Callback)"
@@ -116,5 +115,22 @@ public extension RaycastMacro {
     case invalidMacroTarget
     /// This macro cannot be applied to static functions.
     case unsupportedStaticFunction
+  }
+}
+
+// MARK: -
+
+private extension RaycastMacro {
+  static func isReturning(clause: ReturnClauseSyntax?) -> Bool {
+    guard let returnType = clause?.type else { return false }
+
+    if let type = returnType.as(IdentifierTypeSyntax.self) {
+      guard case .identifier("Void") = type.name.tokenKind else { return true }
+      return false
+    } else if let type = returnType.as(TupleTypeSyntax.self) {
+      return !type.elements.isEmpty
+    } else {
+      return true
+    }
   }
 }

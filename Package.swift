@@ -37,6 +37,16 @@ let package = Package(
       // swiftSettings: .swiftSettings
     ),
 
+    .testTarget(
+      name: "RaycastSwiftMacrosTests",
+      dependencies: [
+        .target(name: "RaycastSwiftMacros"),
+        .product(name: "SwiftSyntaxMacrosTestSupport", package: "swift-syntax")
+      ],
+      path: "SwiftMacros/Tests"
+      // swiftSettings: .swiftSettings
+    ),
+
     .macro(
       name: "MacrosImplementation",
       dependencies: [
