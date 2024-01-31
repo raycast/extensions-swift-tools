@@ -15,7 +15,7 @@ struct ExportableFunction: @unchecked Sendable {
 extension ExportableFunction {
   var typescriptInterface: String {
     var result = "function \(name)("
-    result.append(parameters.map { "\($0.name): \(Self.typeScriptType(for: $0.type))" }.joined(separator: ", "))
+    result.append(parameters.map { "\($0.name)\(Self.isOptional(type: $0.type) ? "?" : ""): \(Self.typeScriptType(for: $0.type))" }.joined(separator: ", "))
     result.append("): Promise<")
     result.append(returnType.map { Self.typeScriptType(for: $0) } ?? "void")
     result.append(">")
@@ -55,9 +55,14 @@ extension ExportableFunction {
 }
 
 private extension ExportableFunction {
+  static func isOptional(type swiftType: TypeSyntax) -> Bool {
+    guard case .some = swiftType.as(OptionalTypeSyntax.self) else { return false }
+    return true
+  }
+
   static func typeScriptType(for swiftType: TypeSyntax) -> String {
     if let type = swiftType.as(OptionalTypeSyntax.self) {
-      return "\(typeScriptType(for: type.wrappedType)) | undefined"
+      return "\(typeScriptType(for: type.wrappedType)) | null"
     } else if let type = swiftType.as(ImplicitlyUnwrappedOptionalTypeSyntax.self) {
       return typeScriptType(for: type.wrappedType)
     } else if let type = swiftType.as(SomeOrAnyTypeSyntax.self) {
