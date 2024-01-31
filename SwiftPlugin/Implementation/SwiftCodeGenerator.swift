@@ -43,14 +43,13 @@ private func mainFile(module moduleName: String, entry entryTypeName: String) ->
       }
 
       let proxyName = "\#(moduleName)._Proxy\(funcName)"
-      guard let proxy = NSClassFromString(proxyName) as? NSObject.Type else {
+      guard let proxy = NSClassFromString(proxyName) as? _Ray.Proxy.Type else {
         Swift.print(MissingProxyError(name: proxyName).localizedDescription, to: &stderr)
         exit(EXIT_FAILURE)
       }
 
-      let selector = NSSelectorFromString("_execute:")
       let callback = _Ray.Callback()
-      proxy.perform(selector, with: callback)
+      proxy._execute(callback)
       do {
         Swift.print(try await callback.encodedString)
       } catch let error {

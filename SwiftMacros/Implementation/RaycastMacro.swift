@@ -28,8 +28,8 @@ public struct RaycastMacro: PeerMacro {
     let returnType = signature.returnClause.map { "\($0.type)" }
     let isReturning = !(returnType.flatMap { $0 == "Void" || $0 == "()" } ?? true)
 
-    let typeDecl = "@objc final class _Proxy\(funcName): NSObject"
-    let funcDecl = "@objc static func _execute(_ callback: _Ray.Callback)"
+    let typeDecl = "@objc final class _Proxy\(funcName): NSObject, _Ray.Proxy"
+    let funcDecl = "static func _execute(_ callback: _Ray.Callback)"
 
     guard !parameters.isEmpty else {
       if !isThrow {

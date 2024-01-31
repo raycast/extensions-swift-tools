@@ -21,8 +21,8 @@ final class MacrosTests: XCTestCase {
         "🎄🎄🎄🎄🎄🎄🎄🎄"
       }
 
-      @objc final class _Proxygreet: NSObject {
-        @objc static func _execute(_ callback: _Ray.Callback) {
+      @objc final class _Proxygreet: NSObject, _Ray.Proxy {
+        static func _execute(_ callback: _Ray.Callback) {
           let value = greet()
         callback.forward(value: _value)
         }
