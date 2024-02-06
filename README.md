@@ -14,6 +14,10 @@ This Swift Package contains code generation macros and plugins to build a commun
 
 ## Using the Package
 
+We built a sample extension using Swift [here](https://github.com/raycast/extensions-swift-sample). Check it out to quickly get a feeling how things should be laid out.
+
+To use Swift within Raycast:
+
 1. Create (or fork) a Raycast extension.
 
     If you don't know how, check out [this guide](https://developers.raycast.com/basics/create-your-first-extension).
