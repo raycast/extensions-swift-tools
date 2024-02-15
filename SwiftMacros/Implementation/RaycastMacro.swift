@@ -20,92 +20,87 @@ public struct RaycastMacro: PeerMacro {
       throw Error.unsupportedStaticFunction
     }
 
-    let funcName = functionDecl.name.text
-    let signature = functionDecl.signature
-    let isAsync = signature.effectSpecifiers?.asyncSpecifier != nil
-    let isThrow = signature.effectSpecifiers?.throwsSpecifier != nil
-    let parameters = signature.parameterClause.parameters
-    let isReturning = Self.isReturning(clause: signature.returnClause)
+    let generatedDeclaration = try ClassDeclSyntax(
+      "@objc final class _Proxy\(functionDecl.name): NSObject, _Ray.Proxy"
+    ) {
+      try FunctionDeclSyntax("static func _execute(_ callback: _Ray.Callback)") {
+        let signature = functionDecl.signature
+        let parameters = signature.parameterClause.parameters
+        // If the function declares parameters, the values need to be extracted from argv
+        if !parameters.isEmpty {
+          try VariableDeclSyntax.init("let cmdlineArgs = _Ray.Arguments(dropping: 2)")
+          GuardStmtSyntax(conditions: [ConditionElementSyntax(condition: .expression("cmdlineArgs.count >= \(raw: parameters.count)"))]) {
+            "return callback.forward(error: _Ray.MacroError.invalidArguments)"
+          }
 
-    let typeDecl = "@objc final class _Proxy\(funcName): NSObject, _Ray.Proxy"
-    let funcDecl = "static func _execute(_ callback: _Ray.Callback)"
+          // Declare all the local variables holding the values decoded from the Command-line arguments
+          for param in parameters {
+            "let \(param.secondName ?? param.firstName): \(param.type)"
+          }
+          // do-catch statement JSON decoding the values in argv
+          DoStmtSyntax(body: CodeBlockSyntax {
+            "let decoder = JSONDecoder()"
+            for (i, param) in parameters.enumerated() {
+              "\(param.secondName ?? param.firstName) = try decoder.decode(\(param.type).self, from: cmdlineArgs[\(raw: i)])"
+            }
+          }, catchClauses: CatchClauseListSyntax {
+            CatchClauseSyntax { "return callback.forward(error: error)" }
+          })
+        }
 
-    guard !parameters.isEmpty else {
-      if !isThrow {
-        return [
-          """
-          \(raw: typeDecl) {
-            \(raw: funcDecl) {
-              \(raw: isReturning ? "let value = " : "")\(raw: isAsync ? "await " : "")\(raw: funcName)()
-              callback.forward(value: \(raw: isReturning ? "value" : ".none"))
+        let isAsync = signature.effectSpecifiers?.asyncSpecifier != nil
+        let isThrow = signature.effectSpecifiers?.throwsSpecifier != nil
+        let isReturning = Self.isReturning(clause: signature.returnClause)
+
+        // Expression calling the actual targeted Swift function
+        let swiftFunction = FunctionCallExprSyntax(
+          calledExpression: DeclReferenceExprSyntax(baseName: .identifier(functionDecl.name.text)),
+          leftParen: .leftParenToken(),
+          rightParen: .rightParenToken(),
+          argumentsBuilder: {
+            for param in parameters {
+              let isWildCard = param.firstName.tokenKind == .wildcard
+              LabeledExprSyntax(
+                label: isWildCard ? .none : param.firstName,
+                colon: isWildCard ? .none : .colonToken(),
+                expression: DeclReferenceExprSyntax(baseName: .identifier((param.secondName ?? param.firstName).text))
+              )
             }
           }
-          """
-        ]
-      } else {
-        return [
-          """
-          \(raw: typeDecl) {
-            \(raw: funcDecl) {
-              do {
-                \(raw: isReturning ? "let value = " : "")try \(raw: isAsync ? "await " : "")\(raw: funcName)()
-                callback.forward(value: \(raw: isReturning ? "value" : ".none"))
-              } catch {
-                callback.forward(error: error)
-              }
-            }
-          }
-          """
-        ]
-      }
-    }
+        )
+        // Expressing including the `try` and `await` keywords (if necessary)
+        let swiftExpression: any ExprSyntaxProtocol = switch (isThrow, isAsync) {
+        case (true, true): TryExprSyntax(tryKeyword: .keyword(.try, trailingTrivia: " "), expression: AwaitExprSyntax(awaitKeyword: .keyword(.await, trailingTrivia: " "), expression: swiftFunction))
+        case (true, false): TryExprSyntax(tryKeyword: .keyword(.try, trailingTrivia: " "), expression: swiftFunction)
+        case (false, true): AwaitExprSyntax(awaitKeyword: .keyword(.await, trailingTrivia: " "), expression: swiftFunction)
+        case (false, false): swiftFunction
+        }
 
-    let localVars: [(name: String, type: String)] = parameters.map { (($0.secondName ?? $0.firstName).text, "\($0.type)") }
-    let localDecl = localVars.map { "\($0.name): \($0.type)" }.joined(separator: ", ")
-    let decoding = localVars.enumerated().map { "\($1.name) = try decoder.decode(\($1.type).self, from: cmdlineArgs[\($0)])" }.joined(separator: "\n\t\t")
-    let arguments = zip(parameters, localVars).map { "\($0.firstName): \($1.name)" }.joined(separator: ", ")
+        let callAndAnswer = CodeBlockItemListSyntax {
+          "\(raw: isReturning ? "let _computedValue = " : "")\(raw: swiftExpression)"
+          "callback.forward(value: \(raw: isReturning ? "_computedValue" : ".none"))"
+        }
 
-    let firstPart: String = """
-    let cmdlineArgs = _Ray.Arguments(dropping: 2)
-    guard cmdlineArgs.count >= \(parameters.count) else { return callback.forward(error: _Ray.MacroError.invalidArguments) }
+        let lastBlock = !isThrow ? callAndAnswer : CodeBlockItemListSyntax {
+          DoStmtSyntax(body: CodeBlockSyntax {
+            callAndAnswer
+          }, catchClauses: CatchClauseListSyntax {
+            CatchClauseSyntax { "return callback.forward(error: error)" }
+          })
+        }
 
-    let \(localDecl)
-    do {
-      let decoder = JSONDecoder()
-      \(decoding)
-    } catch {
-      return callback.forward(error: error)
-    }
-    """
-
-    let secondPart: String = if isThrow {
-      """
-      do {
-        \(isReturning ? "let value = " : "")try \(isAsync ? "await " : "")\(funcName)(\(arguments))
-        callback.forward(value: \(isReturning ? "value" : ".none"))
-      } catch {
-        callback.forward(error: error)
-      }
-      """
-    } else {
-      """
-        \(isReturning ? "let value = " : "")\(isAsync ? "await " : "")\(funcName)(\(arguments))
-        callback.forward(value: \(isReturning ? "value" : ".none"))
-      """
-    }
-
-    return [
-      """
-      \(raw: typeDecl) {
-        \(raw: funcDecl) {
-          \(raw: firstPart)
-            \(raw: isAsync ? "Task {\n\t" : "")\
-            \(raw: secondPart)
-            \(raw: isAsync ? "}" : "")
+        if isAsync {
+          FunctionCallExprSyntax(
+            callee: DeclReferenceExprSyntax(baseName: .identifier("Task")),
+            trailingClosure: ClosureExprSyntax { lastBlock }
+          )
+        } else {
+          lastBlock
         }
       }
-      """
-    ]
+    }
+
+    return [DeclSyntax(generatedDeclaration)]
   }
 }
 
