@@ -65,11 +65,12 @@ final class SimpleTests: XCTestCase {
                   return callback.forward(error: _Ray.MacroError.invalidArguments)
               }
               let name: String
+              let _argsDecoder = JSONDecoder()
               do {
-                  let decoder = JSONDecoder()
-                  name = try decoder.decode(String.self, from: cmdlineArgs[0])
+                  name = try _argsDecoder.decode(String.self, from: cmdlineArgs[0])
               } catch {
-                  return callback.forward(error: error)
+                  let _argError = _Ray.DecodingArgumentError(name: "name", position: 0, type: String.self, data: cmdlineArgs[0], underlying: error)
+                  return callback.forward(error: _argError)
               }
               greet(name: name)
               callback.forward(value: .none)
@@ -100,13 +101,24 @@ final class SimpleTests: XCTestCase {
               let name: String
               let age: Int
               let nickname: String
+              let _argsDecoder = JSONDecoder()
               do {
-                  let decoder = JSONDecoder()
-                  name = try decoder.decode(String.self, from: cmdlineArgs[0])
-                  age = try decoder.decode(Int.self, from: cmdlineArgs[1])
-                  nickname = try decoder.decode(String.self, from: cmdlineArgs[2])
+                  name = try _argsDecoder.decode(String.self, from: cmdlineArgs[0])
               } catch {
-                  return callback.forward(error: error)
+                  let _argError = _Ray.DecodingArgumentError(name: "name", position: 0, type: String.self, data: cmdlineArgs[0], underlying: error)
+                  return callback.forward(error: _argError)
+              }
+              do {
+                  age = try _argsDecoder.decode(Int.self, from: cmdlineArgs[1])
+              } catch {
+                  let _argError = _Ray.DecodingArgumentError(name: "age", position: 1, type: Int.self, data: cmdlineArgs[1], underlying: error)
+                  return callback.forward(error: _argError)
+              }
+              do {
+                  nickname = try _argsDecoder.decode(String.self, from: cmdlineArgs[2])
+              } catch {
+                  let _argError = _Ray.DecodingArgumentError(name: "nickname", position: 2, type: String.self, data: cmdlineArgs[2], underlying: error)
+                  return callback.forward(error: _argError)
               }
               greet(name: name, age: age, nickname)
               callback.forward(value: .none)
@@ -137,13 +149,24 @@ final class SimpleTests: XCTestCase {
               let name: String
               let age: Int
               let nickname: String
+              let _argsDecoder = JSONDecoder()
               do {
-                  let decoder = JSONDecoder()
-                  name = try decoder.decode(String.self, from: cmdlineArgs[0])
-                  age = try decoder.decode(Int.self, from: cmdlineArgs[1])
-                  nickname = try decoder.decode(String.self, from: cmdlineArgs[2])
+                  name = try _argsDecoder.decode(String.self, from: cmdlineArgs[0])
               } catch {
-                  return callback.forward(error: error)
+                  let _argError = _Ray.DecodingArgumentError(name: "name", position: 0, type: String.self, data: cmdlineArgs[0], underlying: error)
+                  return callback.forward(error: _argError)
+              }
+              do {
+                  age = try _argsDecoder.decode(Int.self, from: cmdlineArgs[1])
+              } catch {
+                  let _argError = _Ray.DecodingArgumentError(name: "age", position: 1, type: Int.self, data: cmdlineArgs[1], underlying: error)
+                  return callback.forward(error: _argError)
+              }
+              do {
+                  nickname = try _argsDecoder.decode(String.self, from: cmdlineArgs[2])
+              } catch {
+                  let _argError = _Ray.DecodingArgumentError(name: "nickname", position: 2, type: String.self, data: cmdlineArgs[2], underlying: error)
+                  return callback.forward(error: _argError)
               }
               let _computedValue = greet(name: name, age: age, nickname)
               callback.forward(value: _computedValue)

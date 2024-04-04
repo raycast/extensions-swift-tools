@@ -28,7 +28,7 @@ public struct RaycastMacro: PeerMacro {
         let parameters = signature.parameterClause.parameters
         // If the function declares parameters, the values need to be extracted from argv
         if !parameters.isEmpty {
-          try VariableDeclSyntax.init("let cmdlineArgs = _Ray.Arguments(dropping: 2)")
+          try VariableDeclSyntax("let cmdlineArgs = _Ray.Arguments(dropping: 2)")
           GuardStmtSyntax(conditions: [ConditionElementSyntax(condition: .expression("cmdlineArgs.count >= \(raw: parameters.count)"))]) {
             "return callback.forward(error: _Ray.MacroError.invalidArguments)"
           }
@@ -37,15 +37,19 @@ public struct RaycastMacro: PeerMacro {
           for param in parameters {
             "let \(param.secondName ?? param.firstName): \(param.type)"
           }
+          try VariableDeclSyntax("let _argsDecoder = JSONDecoder()")
+
           // do-catch statement JSON decoding the values in argv
-          DoStmtSyntax(body: CodeBlockSyntax {
-            "let decoder = JSONDecoder()"
-            for (i, param) in parameters.enumerated() {
-              "\(param.secondName ?? param.firstName) = try decoder.decode(\(param.type).self, from: cmdlineArgs[\(raw: i)])"
-            }
-          }, catchClauses: CatchClauseListSyntax {
-            CatchClauseSyntax { "return callback.forward(error: error)" }
-          })
+          for (i, param) in parameters.enumerated() {
+            DoStmtSyntax(body: CodeBlockSyntax {
+              "\(param.secondName ?? param.firstName) = try _argsDecoder.decode(\(param.type).self, from: cmdlineArgs[\(raw: i)])"
+            }, catchClauses: CatchClauseListSyntax {
+              CatchClauseSyntax {
+                #"let _argError = _Ray.DecodingArgumentError(name: "\#(raw: param.secondName ?? param.firstName)", position: \#(raw: i), type: \#(param.type).self, data: cmdlineArgs[\#(raw: i)], underlying: error)"#
+                "return callback.forward(error: _argError)"
+              }
+            })
+          }
         }
 
         let isAsync = signature.effectSpecifiers?.asyncSpecifier != nil
