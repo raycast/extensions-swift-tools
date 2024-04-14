@@ -81,6 +81,44 @@ final class SimpleTests: XCTestCase {
     )
   }
 
+  func testSimpleArgumentWithLineBreakNoReturn() {
+    assertMacroExpansion("""
+      @raycast func greet(
+        name: String
+      ) {
+          print(name)
+      }
+      """,
+      expandedSource: """
+      func greet(
+        name: String
+      ) {
+          print(name)
+      }
+
+      @objc final class _Proxygreet: NSObject, _Ray.Proxy {
+          static func _execute(_ callback: _Ray.Callback) {
+              let cmdlineArgs = _Ray.Arguments(dropping: 2)
+              guard cmdlineArgs.count >= 1 else {
+                  return callback.forward(error: _Ray.MacroError.invalidArguments)
+              }
+              let name: String
+              let _argsDecoder = JSONDecoder()
+              do {
+                  name = try _argsDecoder.decode(String.self, from: cmdlineArgs[0])
+              } catch {
+                  let _argError = _Ray.DecodingArgumentError(name: "name", position: 0, type: String.self, data: cmdlineArgs[0], underlying: error)
+                  return callback.forward(error: _argError)
+              }
+              greet(name: name)
+              callback.forward(value: .none)
+          }
+      }
+      """,
+      macros: ["raycast": RaycastMacro.self]
+    )
+  }
+
   func testMultipleArgumentsNoReturn() {
     assertMacroExpansion("""
       @raycast func greet(name: String, age: Int, _ nickname: String) {
