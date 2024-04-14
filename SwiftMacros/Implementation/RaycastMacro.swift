@@ -35,17 +35,19 @@ public struct RaycastMacro: PeerMacro {
 
           // Declare all the local variables holding the values decoded from the Command-line arguments
           for param in parameters {
-            "let \(param.secondName ?? param.firstName): \(param.type)"
+            let paramName = (param.secondName ?? param.firstName).text.trimmingCharacters(in: .whitespacesAndNewlines)
+            "let \(raw: paramName): \(param.type)"
           }
           try VariableDeclSyntax("let _argsDecoder = JSONDecoder()")
 
           // do-catch statement JSON decoding the values in argv
           for (i, param) in parameters.enumerated() {
+            let paramName = (param.secondName ?? param.firstName).text.trimmingCharacters(in: .whitespacesAndNewlines)
             DoStmtSyntax(body: CodeBlockSyntax {
-              "\(param.secondName ?? param.firstName) = try _argsDecoder.decode(\(param.type).self, from: cmdlineArgs[\(raw: i)])"
+              "\(raw: paramName) = try _argsDecoder.decode(\(param.type).self, from: cmdlineArgs[\(raw: i)])"
             }, catchClauses: CatchClauseListSyntax {
               CatchClauseSyntax {
-                #"let _argError = _Ray.DecodingArgumentError(name: "\#(raw: param.secondName ?? param.firstName)", position: \#(raw: i), type: \#(param.type).self, data: cmdlineArgs[\#(raw: i)], underlying: error)"#
+                #"let _argError = _Ray.DecodingArgumentError(name: "\#(raw: paramName)", position: \#(raw: i), type: \#(param.type).self, data: cmdlineArgs[\#(raw: i)], underlying: error)"#
                 "return callback.forward(error: _argError)"
               }
             })
@@ -65,9 +67,9 @@ public struct RaycastMacro: PeerMacro {
             for param in parameters {
               let isWildCard = param.firstName.tokenKind == .wildcard
               LabeledExprSyntax(
-                label: isWildCard ? .none : param.firstName,
+                label: isWildCard ? .none : .init(stringLiteral: param.firstName.text.trimmingCharacters(in: .whitespacesAndNewlines)),
                 colon: isWildCard ? .none : .colonToken(),
-                expression: DeclReferenceExprSyntax(baseName: .identifier((param.secondName ?? param.firstName).text))
+                expression: DeclReferenceExprSyntax(baseName: .identifier((param.secondName ?? param.firstName).text.trimmingCharacters(in: .whitespacesAndNewlines)))
               )
             }
           }
