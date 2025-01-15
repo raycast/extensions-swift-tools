@@ -5,14 +5,7 @@ import Foundation
 extension StringProtocol {
   var fileURL: URL? {
     let str: String = (self as? String) ?? String(self)
-
-    let url = if #available(macOS 14, *) {
-      URL(string: str, encodingInvalidCharacters: false)
-    } else {
-      URL(string: str)
-    }
-
-    guard let url else { return .none }
+    guard let url = URL(string: str) else { return .none }
 
     switch url.scheme {
     case "file": return url
