@@ -71,7 +71,7 @@ To use Swift within Raycast:
     +      .macOS(.v12)
     +    ],
     +    dependencies: [
-    +      .package(url: "https://github.com/raycast/extensions-swift-tools", from: "1.0.4")
+    +      .package(url: "https://github.com/raycast/extensions-swift-tools", from: "1.0.5")
     +    ],
         targets: [
           .executableTarget(
