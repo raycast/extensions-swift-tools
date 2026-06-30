@@ -7,9 +7,9 @@ This Swift Package contains code generation macros and plugins to build a commun
 
 ### Requirements
 
-- Xcode.
+- Xcode 16.3 or later.
 
-  Xcode needs to be installed in your system. We are hoping to stop requiring Xcode in the future and just require the existence of a [Swift toolchain](https://www.swift.org/download/), alas we are not there yet. Please notice, you don't need to write the swift code in Xcode, you can use any other editor such as VSCode, Sublime, or Nova.
+  Xcode needs to be installed in your system (version 16.3 or later, since the package requires the Swift 6 toolchain and depends on [swift-syntax](https://github.com/swiftlang/swift-syntax) 603). We are hoping to stop requiring Xcode in the future and just require the existence of a [Swift toolchain](https://www.swift.org/download/), alas we are not there yet. Please notice, you don't need to write the swift code in Xcode, you can use any other editor such as VSCode, Sublime, or Nova.
 
 
 ## Using the Package
@@ -61,17 +61,17 @@ To use Swift within Raycast:
 3. Modify the `Package.swift` file to include the necessary macros and build plugins.
 
     ```diff
-    // swift-tools-version: 5.9
+    // swift-tools-version: 6.0
 
     import PackageDescription
 
     let package = Package(
         name: "CustomName",
     +    platforms: [
-    +      .macOS(.v12)
+    +      .macOS(.v13)
     +    ],
     +    dependencies: [
-    +      .package(url: "https://github.com/raycast/extensions-swift-tools", from: "1.0.5")
+    +      .package(url: "https://github.com/raycast/extensions-swift-tools", from: "1.1.0")
     +    ],
         targets: [
           .executableTarget(

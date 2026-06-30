@@ -1,4 +1,4 @@
-// swift-tools-version: 5.9
+// swift-tools-version: 6.0
 import PackageDescription
 import CompilerPluginSupport
 
@@ -22,7 +22,7 @@ let package = Package(
     )
   ],
   dependencies: [
-    .package(url: "https://github.com/apple/swift-syntax.git", from: "509.1.1"),
+    .package(url: "https://github.com/swiftlang/swift-syntax.git", from: "603.0.0"),
   ],
   targets: [
 
@@ -40,7 +40,7 @@ let package = Package(
     .testTarget(
       name: "RaycastSwiftMacrosTests",
       dependencies: [
-        .target(name: "RaycastSwiftMacros"),
+        .target(name: "MacrosImplementation"),
         .product(name: "SwiftSyntaxMacrosTestSupport", package: "swift-syntax")
       ],
       path: "SwiftMacros/Tests"
@@ -97,8 +97,7 @@ let package = Package(
       path: "TypeScriptPlugin/Implementation"
       // swiftSettings: .swiftSettings
     )
-  ],
-  swiftLanguageVersions: [.v5]
+  ]
 )
 
 // private extension Array<SwiftSetting> {

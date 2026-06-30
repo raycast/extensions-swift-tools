@@ -45,7 +45,7 @@ private final class GlobalAttributedFunctionVisitor: SyntaxVisitor {
         attribute: id.name.text,
         name: node.name.text,
         isAsync: specifiers.flatMap(\.asyncSpecifier) != nil,
-        isThrowing: specifiers.flatMap(\.throwsSpecifier) != nil
+        isThrowing: specifiers.flatMap(\.throwsClause?.throwsSpecifier) != nil
       )
 
       for param in signature.parameterClause.parameters {

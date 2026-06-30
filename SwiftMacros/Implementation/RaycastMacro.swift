@@ -53,7 +53,7 @@ public struct RaycastMacro: PeerMacro {
         }
 
         let isAsync = signature.effectSpecifiers?.asyncSpecifier != nil
-        let isThrow = signature.effectSpecifiers?.throwsSpecifier != nil
+        let isThrow = signature.effectSpecifiers?.throwsClause?.throwsSpecifier != nil
         let isReturning = Self.isReturning(clause: signature.returnClause)
 
         // Expression calling the actual targeted Swift function
