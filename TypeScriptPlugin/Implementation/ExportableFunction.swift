@@ -60,6 +60,13 @@ private extension ExportableFunction {
     return true
   }
 
+  // swift-syntax 600+ models a generic argument as a `.type`/`.expr` choice instead of a bare `TypeSyntax`.
+  // Generic arguments for Set/Array/Dictionary are always types, so unwrap the type (falling back to `any`).
+  static func typeScriptType(for argument: GenericArgumentSyntax.Argument) -> String {
+    guard let swiftType = argument.as(TypeSyntax.self) else { return "any" }
+    return typeScriptType(for: swiftType)
+  }
+
   static func typeScriptType(for swiftType: TypeSyntax) -> String {
     if let type = swiftType.as(OptionalTypeSyntax.self) {
       return "\(typeScriptType(for: type.wrappedType)) | null"

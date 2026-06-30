@@ -17,23 +17,23 @@ import PackagePlugin
     }
     // Verify the executable target doesn't contain a `main.swift` file.
     let unsupportedFile = "main.swift"
-    guard !target.sourceFiles.contains(where: { $0.type == .source && $0.path.lastComponent.lowercased() == unsupportedFile }) else {
+    guard !target.sourceFiles.contains(where: { $0.type == .source && $0.url.lastPathComponent.lowercased() == unsupportedFile }) else {
       Diagnostics.error("\(target.name) executable target cannot define a \(unsupportedFile) file")
       return []
     }
     // Retrieve the tool used to generate the Swift files.
-    let generator = try context.tool(named: "SwiftCodeGenerator").path
+    let generator = try context.tool(named: "SwiftCodeGenerator").url
     // Specify the path to the Swift file containing the @main structure (in the build folder)
     let generatedEntryType = "_RayMain"
     let generatedFile = "\(generatedEntryType).swift"
-    let generatedPath = context.pluginWorkDirectory.appending(subpath: generatedFile)
+    let generatedURL = context.pluginWorkDirectoryURL.appendingPathComponent(generatedFile)
     // Launch the Swift code generator for the target executing the build plugin.
     return [
       .buildCommand(
         displayName: "Generating \(generatedFile)",
         executable: generator,
-        arguments: ["-o", generatedPath.string, "-m", target.moduleName, "-t", generatedEntryType],
-        outputFiles: [generatedPath]
+        arguments: ["-o", generatedURL.path, "-m", target.moduleName, "-t", generatedEntryType],
+        outputFiles: [generatedURL]
       )
     ]
   }

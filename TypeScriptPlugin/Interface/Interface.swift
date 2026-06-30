@@ -17,34 +17,34 @@ import Foundation
       return []
     }
     // Retrieve the tool used to generate the TS definition and implementation.
-    let generator = try context.tool(named: "TypeScriptCodeGenerator").path
+    let generator = try context.tool(named: "TypeScriptCodeGenerator").url
     // Define the attributes used to mark functions as _exportable_
     let attributes: [String] = ["@raycast"]
 
-    var paths: Set<Path> = []
+    var fileURLs: Set<URL> = []
     // Enumerate all Swift files in the target.
     for file in target.sourceFiles(withSuffix: "swift") {
       // Select those files containing any of the specified exportable attributes.
-      guard case .source = file.type, !paths.contains(file.path),
+      guard case .source = file.type, !fileURLs.contains(file.url),
             try await file.contains(attributes: attributes) else { continue }
-      paths.insert(file.path)
+      fileURLs.insert(file.url)
     }
 
-    guard !paths.isEmpty else {
+    guard !fileURLs.isEmpty else {
       Diagnostics.warning("Target '\(target.name) had no file with exported attributes: \(attributes.joined(separator: " or "))")
       return []
     }
 
     // Generate the header and implementation file names.
-    let headerPath = context.pluginWorkDirectory.appending(subpath: "raycast.d.ts")
-    let implementationPath = context.pluginWorkDirectory.appending(subpath: "raycast.js")
+    let headerURL = context.pluginWorkDirectoryURL.appendingPathComponent("raycast.d.ts")
+    let implementationURL = context.pluginWorkDirectoryURL.appendingPathComponent("raycast.js")
 
     return [
       .buildCommand(
         displayName: "Generating d.ts and js files",
         executable: generator,
-        arguments: ["-h", headerPath.string, "-i", implementationPath.string, "-a"] + attributes + ["-f"] + paths.map(\.string),
-        outputFiles: [headerPath, implementationPath]
+        arguments: ["-h", headerURL.path, "-i", implementationURL.path, "-a"] + attributes + ["-f"] + fileURLs.map(\.path),
+        outputFiles: [headerURL, implementationURL]
       )
     ]
   }
