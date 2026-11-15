@@ -137,7 +137,7 @@ The generated TypeScript wrappers run the compiled executable once per call. Kno
 - The first argument is the function's name.
 - Each following argument is one parameter, JSON-encoded, in declaration order. A `String` parameter needs its JSON quotes.
 - On success, the return value is printed to stdout as JSON, followed by a newline, and the process exits with code 0. A function without a return value prints only the newline, and its TypeScript wrapper resolves to `null`.
-- The wrapper trims stdout and parses whatever is left as one JSON value. Printing diagnostics from an exported function can therefore make the call fail or change its result; write them to stderr instead.
+- The wrapper trims stdout, resolves to `null` if nothing remains, and otherwise parses it as one JSON value. Printing diagnostics from an exported function can therefore make the call fail or change its result; write them to stderr instead.
 - On failure, the error is printed to stderr and the process exits with a non-zero code.
 
 For `@raycast func greet(name: String, isFormal: Bool) -> String`:
