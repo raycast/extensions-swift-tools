@@ -136,7 +136,8 @@ The generated TypeScript wrappers run the compiled executable once per call. Kno
 
 - The first argument is the function's name.
 - Each following argument is one parameter, JSON-encoded, in declaration order. A `String` parameter needs its JSON quotes.
-- On success, the return value is printed to stdout as JSON (nothing for a function without a return value), and the process exits with code 0.
+- On success, the return value is printed to stdout as JSON, followed by a newline, and the process exits with code 0. A function without a return value prints only the newline, and its TypeScript wrapper resolves to `null`.
+- The wrapper parses everything on stdout as that one JSON value, so don't `print` from an exported function: a log line there makes the call fail. Write diagnostics to stderr instead.
 - On failure, the error is printed to stderr and the process exits with a non-zero code.
 
 For `@raycast func greet(name: String, isFormal: Bool) -> String`:
@@ -149,11 +150,11 @@ Synchronous functions run directly on the main thread; `async` functions run in 
 
 ### Long-running functions
 
-The generated wrapper resolves only when the process exits, so an exported function that never returns never resolves. If your extension needs Swift code that keeps running after the command ends, there is no supported API for it yet ([#14](https://github.com/raycast/extensions-swift-tools/issues/14)). A pattern that works today:
+The generated wrapper resolves only when the process exits, so an exported function that never returns never resolves. If your extension needs Swift code that keeps running after the command ends, there is no supported API for it yet ([#14](https://github.com/raycast/extensions-swift-tools/issues/14)). A possible workaround, which you need to validate for your own use:
 
 - Export a **synchronous** function that starts the run loop, for example with `NSApplication.shared.run()`, and never returns. AppKit's run loop must run on the main thread, and an `async` function runs in a `Task`, which doesn't guarantee that.
-- Instead of calling its wrapper, start the compiled executable yourself with Node's `spawn`, passing the function name and JSON-encoded arguments as above, with `{ detached: true, stdio: "ignore" }`, then call `unref()`.
-- Talk to the running process from other, short-lived exported functions, for example over `DistributedNotificationCenter`.
-- If the process must be unique, identify it by its arguments, not by its executable path: the path differs between a development build and an installed extension.
+- Instead of calling its wrapper, start the compiled executable yourself with Node's `spawn`, passing the function name and JSON-encoded arguments as above, with `{ detached: true, stdio: "ignore" }`, then call `unref()`. Locate the executable under `environment.assetsPath` (currently `compiled_raycast_swift/<name of the folder holding Package.swift>`), never by a hard-coded absolute path, make sure it is executable (the generated runner calls `chmod 755` before each launch), and handle spawn errors.
+- Talk to the running process from other, short-lived exported functions through some form of inter-process communication that you implement, for example `DistributedNotificationCenter`.
+- If only one instance may run, give it an identity specific to your extension, such as an argument only your extension passes, and check it explicitly. The function name and arguments alone don't make a process unique: another extension can export a function with the same name.
 
 This relies on details of the Raycast CLI that aren't a stable API: the executable's location and the argument format. Re-check them when you update `@raycast/api`.
