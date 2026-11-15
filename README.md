@@ -129,3 +129,31 @@ To use Swift within Raycast:
      }
    }
    ```
+
+## How the executable is called
+
+The generated TypeScript wrappers run the compiled executable once per call. Knowing the format helps when you debug a function from Terminal:
+
+- The first argument is the function's name.
+- Each following argument is one parameter, JSON-encoded, in declaration order. A `String` parameter needs its JSON quotes.
+- On success, the return value is printed to stdout as JSON (nothing for a function without a return value), and the process exits with code 0.
+- On failure, the error is printed to stderr and the process exits with a non-zero code.
+
+For `@raycast func greet(name: String, isFormal: Bool) -> String`:
+
+```sh
+<compiled executable> greet '"Ada"' 'true'
+```
+
+Synchronous functions run directly on the main thread; `async` functions run in a `Task`.
+
+### Long-running functions
+
+The generated wrapper resolves only when the process exits, so an exported function that never returns never resolves. If your extension needs Swift code that keeps running after the command ends, there is no supported API for it yet ([#14](https://github.com/raycast/extensions-swift-tools/issues/14)). A pattern that works today:
+
+- Export a **synchronous** function that starts the run loop, for example with `NSApplication.shared.run()`, and never returns. AppKit's run loop must run on the main thread, and an `async` function runs in a `Task`, which doesn't guarantee that.
+- Instead of calling its wrapper, start the compiled executable yourself with Node's `spawn`, passing the function name and JSON-encoded arguments as above, with `{ detached: true, stdio: "ignore" }`, then call `unref()`.
+- Talk to the running process from other, short-lived exported functions, for example over `DistributedNotificationCenter`.
+- If the process must be unique, identify it by its arguments, not by its executable path: the path differs between a development build and an installed extension.
+
+This relies on details of the Raycast CLI that aren't a stable API: the executable's location and the argument format. Re-check them when you update `@raycast/api`.
