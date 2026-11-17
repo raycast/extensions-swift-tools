@@ -129,3 +129,24 @@ To use Swift within Raycast:
      }
    }
    ```
+
+6. Import the exported functions in your TypeScript code with the `swift:` prefix.
+
+   The path after `swift:` is relative to the importing file and points to the folder that holds `Package.swift`. For the layout above (a `swift` folder next to `src`):
+
+   ```typescript
+   import { greet } from "swift:../swift";
+
+   const message = await greet("Ada", true);
+   ```
+
+   This import is what makes `ray build` and `ray develop` compile the Swift package. If no file imports the package with `swift:`, the build still succeeds, but it compiles no Swift and prints no "compiling swift package" step.
+
+   Every exported function returns a `Promise` on the TypeScript side, including functions that are synchronous in Swift. A thrown Swift error rejects the promise.
+
+   Compiling creates two folders that shouldn't be committed. Add them to your extension's `.gitignore`, as the [sample extension](https://github.com/raycast/extensions-swift-sample) does:
+
+   ```gitignore
+   .raycast-swift-build
+   compiled_raycast_swift
+   ```
